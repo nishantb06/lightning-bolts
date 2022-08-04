@@ -53,15 +53,6 @@ class DummyDetectionDataset(Dataset):
         >>> from torch.utils.data import DataLoader
         >>> ds = DummyDetectionDataset()
         >>> dl = DataLoader(ds, batch_size=7)
-        >>> # get first batch
-        >>> batch = next(iter(dl))
-        >>> x,y = batch
-        >>> x.size()
-        torch.Size([7, 3, 256, 256])
-        >>> y['boxes'].size()
-        torch.Size([7, 1, 4])
-        >>> y['labels'].size()
-        torch.Size([7, 1])
     """
 
     def __init__(
@@ -145,11 +136,6 @@ class RandomDictStringDataset(Dataset):
         >>> from torch.utils.data import DataLoader
         >>> ds = RandomDictStringDataset(10)
         >>> dl = DataLoader(ds, batch_size=7)
-        >>> batch = next(iter(dl))
-        >>> batch['id']
-        ['0', '1', '2', '3', '4', '5', '6']
-        >>> len(batch['x'])
-        7
     """
 
     def __init__(self, size: int, num_samples: int = 250):
