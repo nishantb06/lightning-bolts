@@ -172,3 +172,4 @@ mlruns/
 # Downloaded Data through Scripts
 VOCdevkit/
 *.tar
+dummy.ipynb
