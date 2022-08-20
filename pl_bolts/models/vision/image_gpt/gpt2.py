@@ -61,6 +61,7 @@ class GPT2(LightningModule):
         num_positions: int,
         vocab_size: int,
         num_classes: int,
+        classify: bool = False,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -82,11 +83,13 @@ class GPT2(LightningModule):
         for _ in range(self.hparams.layers):
             self.layers.append(Block(self.hparams.embed_dim, self.hparams.heads))
 
-        self.ln_f = nn.LayerNorm(self.hparams.embed_dim)
-        self.head = nn.Linear(self.hparams.embed_dim, self.hparams.vocab_size, bias=False)
-        self.clf_head = nn.Linear(self.hparams.embed_dim, self.hparams.num_classes)
+        # self.ln_f = nn.LayerNorm(self.hparams.embed_dim)
+        if not self.hparams.classify:
+            self.head = nn.Linear(self.hparams.embed_dim, self.hparams.vocab_size, bias=False)
+        if self.hparams.classify:
+            self.clf_head = nn.Linear(self.hparams.embed_dim, self.hparams.num_classes)
 
-    def forward(self, x, classify=False):
+    def forward(self, x):
         """Expect input as shape [sequence len, batch] If classify, return classification logits."""
         length, batch = x.shape
 
@@ -104,7 +107,7 @@ class GPT2(LightningModule):
         for layer in self.layers:
             h = layer(h)
 
-        if not classify:
+        if not self.hparams.classify:
             # return logits
             return self.head(h)
 
