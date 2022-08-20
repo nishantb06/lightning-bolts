@@ -1,21 +1,51 @@
+import pytest
 import torch
+
+from pl_bolts.models.vision import GPT2
+
+# ImageGPT, SemSegment, UNet
+
+seq_len = 17
+batch_size = 32
+vocab_size = 16
+classify = True
+
+models = {
+    "gpt2": {
+        "model": GPT2(
+            embed_dim=16, heads=2, layers=2, num_positions=17, vocab_size=16, num_classes=10, classify=classify
+        ),
+        "input": torch.randint(0, vocab_size, (seq_len, batch_size)),
+        "output_dim": (17, 32, 16) if not classify else (32, 10),
+    }
+}
 
 
 def _create_model(model_name):
-    return None
+    if model_name in models.keys():
+        return models[model_name]["model"]
+    else:
+        raise ValueError("enter a valid model name")
 
 
-def _get_input_size(model_name):
-    """returns the expected input size for the corresponding model."""
-    pass
+def _get_input(model_name):
+    """returns the expected input for the corresponding model."""
+    if model_name in models.keys():
+        return models[model_name]["input"]
+    else:
+        raise ValueError("enter a valid model name")
 
 
 def _get_output_size(model_name):
     """returns the expected output size for the corresponding model."""
-    pass
+    if model_name in models.keys():
+        return models[model_name]["output_dim"]
+    else:
+        raise ValueError("enter a valid model name")
 
 
-def test_model_forward(model_name: str, batch_size: int):
+@pytest.mark.parametrize("model_name,batch_size", [("gpt2", 16)])
+def test_model_forward(catch_warnings, model_name: str, batch_size: int):
     """
     Tests forward pass of a model
         1. Output should be desired shape
@@ -24,28 +54,28 @@ def test_model_forward(model_name: str, batch_size: int):
     model = _create_model(model_name)
     model.eval()
 
-    input_size = _get_input_size(model_name=model_name)
+    inputs = _get_input(model_name=model_name)
     output_size = _get_output_size(model_name=model_name)
-    inputs = torch.randn((batch_size, *input_size))
+
     outputs = model(inputs)
 
-    assert outputs.shape == torch.Size([batch_size, *output_size])
+    assert outputs.shape == torch.Size([*output_size])
     assert not torch.isnan(outputs).any(), "Output included NaNs"
 
 
-def test_model_backward(model_name: str, batch_size: int):
+@pytest.mark.parametrize("model_name,batch_size", [("gpt2", 16)])
+def test_model_backward(catch_warnings, model_name: str, batch_size: int):
     """
     Tests backward pass of a model
         1. none of the gradients should be NaN
         2. number of gradients should be the same as number of parameters
     """
-    input_size = _get_input_size(model_name=model_name)
+    inputs = _get_input(model_name=model_name)
 
-    model = _create_model(model_name, pretrained=False, num_classes=42)
+    model = _create_model(model_name)
     num_params = sum(x.numel() for x in model.parameters())
-    model.train()
+    model = model.train()
 
-    inputs = torch.randn((batch_size, *input_size))
     outputs = model(inputs)
 
     # not sure what this is
