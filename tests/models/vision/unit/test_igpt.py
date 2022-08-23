@@ -2,13 +2,15 @@ import pytest
 import torch
 
 from pl_bolts.models.vision import GPT2
+from pl_bolts.models.vision.image_gpt.igpt_module import ImageGPT
 
 # ImageGPT, SemSegment, UNet
 
 seq_len = 17
 batch_size = 32
 vocab_size = 16
-classify = True
+classify = True  # figure out a way to test with classify as false also
+image_size = (1, 28, 28)
 
 models = {
     "gpt2": {
@@ -17,7 +19,12 @@ models = {
         ),
         "input": torch.randint(0, vocab_size, (seq_len, batch_size)),
         "output_dim": (17, 32, 16) if not classify else (32, 10),
-    }
+    },
+    "i-gpt": {
+        "model": ImageGPT(),
+        "input": torch.rand(batch_size, *image_size),
+        "output_dim": (784, 32, 16),
+    },
 }
 
 
@@ -44,8 +51,11 @@ def _get_output_size(model_name):
         raise ValueError("enter a valid model name")
 
 
-@pytest.mark.parametrize("model_name,batch_size", [("gpt2", 16)])
-def test_model_forward(catch_warnings, model_name: str, batch_size: int):
+model_to_test = ["gpt2", "i-gpt"]
+
+
+@pytest.mark.parametrize("model_name", model_to_test)
+def test_model_forward(catch_warnings, model_name: str):
     """
     Tests forward pass of a model
         1. Output should be desired shape
@@ -63,8 +73,8 @@ def test_model_forward(catch_warnings, model_name: str, batch_size: int):
     assert not torch.isnan(outputs).any(), "Output included NaNs"
 
 
-@pytest.mark.parametrize("model_name,batch_size", [("gpt2", 16)])
-def test_model_backward(catch_warnings, model_name: str, batch_size: int):
+@pytest.mark.parametrize("model_name", model_to_test)
+def test_model_backward(catch_warnings, model_name: str):
     """
     Tests backward pass of a model
         1. none of the gradients should be NaN
