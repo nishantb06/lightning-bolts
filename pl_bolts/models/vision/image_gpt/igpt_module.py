@@ -149,6 +149,7 @@ class ImageGPT(LightningModule):
             num_positions=self.hparams.pixels * self.hparams.pixels,
             vocab_size=self.hparams.vocab_size,
             num_classes=self.hparams.num_classes,
+            classify=self.hparams.classify,
         )
 
         self.criterion = nn.CrossEntropyLoss()
@@ -163,15 +164,15 @@ class ImageGPT(LightningModule):
         sched = torch.optim.lr_scheduler.CosineAnnealingLR(optim, self.hparams.steps)
         return [optim], [sched]
 
-    def forward(self, x, classify=False):
+    def forward(self, x):
         x = _shape_input(x)
 
         # TODO(teddykoker): this is a hack to quantize images into `vocab_size` bins.
         # This only works with 1 channel images; something like KNN needs to be used
         # for RGB. Assumes data is in [0.0, 1.0].
         x = torch.round(x * (self.hparams.vocab_size - 1)).long()
-
-        return self.gpt(x, classify)
+        print(f"shape of x before going into gpt is {x.shape}")
+        return self.gpt(x)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
